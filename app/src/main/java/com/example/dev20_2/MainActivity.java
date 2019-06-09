@@ -35,6 +35,7 @@ import com.mapbox.api.geocoding.v5.models.CarmenFeature;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -46,11 +47,15 @@ import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
+import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
+import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -71,6 +76,8 @@ public class MainActivity extends AppCompatActivity
     private DirectionsRoute currentRoute;
     private static final String TAG = "DirectionsActivity";
     private NavigationMapRoute navigationMapRoute;
+    Point destinationPoint;
+    Point originPoint;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,14 +86,6 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -106,15 +105,20 @@ public class MainActivity extends AppCompatActivity
         autocompleteSupportFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(@NonNull Place place) {
-                Point destinationPoint = Point.fromLngLat(place.getLatLng().longitude, place.getLatLng().latitude);
-                Point originPoint = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
+                 destinationPoint = Point.fromLngLat(place.getLatLng().longitude, place.getLatLng().latitude);
+                 originPoint = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
                         locationComponent.getLastKnownLocation().getLatitude());
 
                 GeoJsonSource source = mapboxMap.getStyle().getSourceAs("destination-source-id");
                 if (source != null) {
                     source.setGeoJson(Feature.fromGeometry(destinationPoint));
                 }
-               getRoute(originPoint, destinationPoint);
+                mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                        new CameraPosition.Builder()
+                        .target(new LatLng(place.getLatLng().latitude, place.getLatLng().longitude))
+                        .zoom(14)
+                        .build()), 6000);
+                getRoute(originPoint, destinationPoint);
             }
 
             @Override
@@ -123,6 +127,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
+
+
 
     private void getRoute(Point origin, Point destination) {
         NavigationRoute.builder(getApplicationContext())
@@ -225,6 +231,17 @@ public class MainActivity extends AppCompatActivity
                 enableLocationComponent(style);
                 addDestinationIconSymbolLayer(style);
                 mapboxMap.addOnMapClickListener(MainActivity.this);
+                findViewById(R.id.fabDirection).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        boolean simulateRoute = true;
+                        NavigationLauncherOptions options = NavigationLauncherOptions.builder()
+                                .directionsRoute(currentRoute)
+                                .shouldSimulateRoute(simulateRoute)
+                                .build();
+                        NavigationLauncher.startNavigation(MainActivity.this, options);
+                    }
+                });
             }
         });
     }
@@ -269,16 +286,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onMapClick(@NonNull LatLng point) {
-        Point destinationPoint = Point.fromLngLat(point.getLongitude(), point.getLatitude());
-        Point originPoint = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
-                locationComponent.getLastKnownLocation().getLatitude());
-
-        GeoJsonSource source = mapboxMap.getStyle().getSourceAs("destination-source-id");
-        if (source != null) {
-            source.setGeoJson(Feature.fromGeometry(destinationPoint));
-        }
-        getRoute(originPoint, destinationPoint);
-        return true;
+        return false;
     }
 
     @Override
