@@ -7,6 +7,7 @@ public class Notification {
     private int type;
     private int upvote;
     private int downvote;
+    private String description;
 
     public Notification() {
     }
@@ -66,5 +67,13 @@ public class Notification {
 
     public void setDownvote(int downvote) {
         this.downvote = downvote;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

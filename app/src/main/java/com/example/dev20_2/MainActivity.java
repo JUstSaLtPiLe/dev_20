@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity
     private NavigationMapRoute navigationMapRoute;
     Point destinationPoint;
     Point originPoint;
+    private FloatingActionButton sendLocation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +87,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        sendLocation();
 
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -99,6 +102,8 @@ public class MainActivity extends AppCompatActivity
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+
+
         Places.initialize(getApplicationContext(), "AIzaSyBqoJ10T2R-e2t5K6DHFvLNNoL1sm4XJsY");
         final AutocompleteSupportFragment autocompleteSupportFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
         autocompleteSupportFragment.setPlaceFields(Arrays.asList(Place.Field.LAT_LNG, Place.Field.ID, Place.Field.NAME));
@@ -124,6 +129,21 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onError(@NonNull Status status) {
 
+            }
+        });
+    }
+
+    public void sendLocation(){
+        sendLocation = findViewById(R.id.fabSendLocation);
+        sendLocation.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Point currentLocation = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
+                        locationComponent.getLastKnownLocation().getLatitude());
+                Intent intent = new Intent(MainActivity.this, SendLocationActivity.class);
+                intent.putExtra("lat", currentLocation.latitude());
+                intent.putExtra("lng", currentLocation.longitude());
+                startActivity(intent);
             }
         });
     }
