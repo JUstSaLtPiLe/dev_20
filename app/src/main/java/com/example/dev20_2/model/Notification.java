@@ -1,24 +1,17 @@
 package com.example.dev20_2.model;
 
 public class Notification {
+    private String id;
     private String email;
-    private String lat;
-    private String lng;
+    private long lat;
+    private long lng;
     private int type;
     private int upvote;
     private int downvote;
     private String description;
+    private String image;
 
     public Notification() {
-    }
-
-    public Notification(String email, String lat, String lng, int type, int upvote, int downvote) {
-        this.email = email;
-        this.lat = lat;
-        this.lng = lng;
-        this.type = type;
-        this.upvote = upvote;
-        this.downvote = downvote;
     }
 
     public String getEmail() {
@@ -29,19 +22,19 @@ public class Notification {
         this.email = email;
     }
 
-    public String getLat() {
+    public long getLat() {
         return lat;
     }
 
-    public void setLat(String lat) {
+    public void setLat(long lat) {
         this.lat = lat;
     }
 
-    public String getLng() {
+    public long getLng() {
         return lng;
     }
 
-    public void setLng(String lng) {
+    public void setLng(long lng) {
         this.lng = lng;
     }
 
@@ -75,5 +68,21 @@ public class Notification {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }
