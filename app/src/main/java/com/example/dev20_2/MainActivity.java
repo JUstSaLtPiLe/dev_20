@@ -143,15 +143,13 @@ public class MainActivity extends AppCompatActivity
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if(dataSnapshot != null){
 
-                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-                    for ( DataSnapshot child: children){
-                        Notification noti = child.getValue(Notification.class);
+                    Log.d("Child Added: ", "dataSnapshot: " + dataSnapshot);
+                    //Notification noti = dataSnapshot.getValue(Notification.class);
 
                         // maybe not push noti
                         //sendNotification(noti);
 
                         // add marker here
-                    }
                 }
             }
 

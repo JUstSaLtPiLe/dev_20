@@ -45,6 +45,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class SendLocationActivity extends AppCompatActivity {
@@ -70,9 +71,17 @@ public class SendLocationActivity extends AppCompatActivity {
         String id = createID();
         Context context = this;
 
-        Intent intent = getIntent();
-        lat = Double.parseDouble(intent.getStringExtra("lat"));
-        lng = Double.parseDouble(intent.getStringExtra("lng"));
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if(extras != null) {
+                lat = extras.getDouble("lat");
+                lng = extras.getDouble("lng");
+            }
+        } else {
+            lat = (Double) savedInstanceState.getSerializable("lat");
+            lng = (Double) savedInstanceState.getSerializable("lng");
+        }
+
 
         accidentList = findViewById(R.id.accidents_list);
         String[] accidentListTxt = {"Traffic Jam", "Accident", "Blockage"};
@@ -94,8 +103,6 @@ public class SendLocationActivity extends AppCompatActivity {
         mStorageRef = storage.getReference();
 
         description = findViewById(R.id.editText_description).toString();
-//        lat = getIntent().getExtras().getLong("lat");
-//        lng = getIntent().getExtras().getLong("lng");
 
         requestMultiplePermissions();
         imgBtn = (ImageButton) findViewById(R.id.imgBtn);
@@ -135,8 +142,8 @@ public class SendLocationActivity extends AppCompatActivity {
                         notification.setImage(uri.toString());
                         mDatabase.push().setValue(notification);
                         Toast.makeText(context, "Sent report!", Toast.LENGTH_SHORT).show();
-                        Intent i = new Intent(SendLocationActivity.this, MainActivity.class);
-                        startActivity(i);
+//                        Intent i = new Intent(SendLocationActivity.this, MainActivity.class);
+//                        startActivity(i);
                     });
                 });
             }
