@@ -1,8 +1,6 @@
 package com.example.dev20_2;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,17 +8,13 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.PersistableBundle;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -34,6 +28,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.karumi.dexter.Dexter;
@@ -48,11 +43,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 public class SendLocationActivity extends AppCompatActivity {
     private Spinner accidentList;
@@ -60,7 +53,7 @@ public class SendLocationActivity extends AppCompatActivity {
     private ImageButton imgBtn;
     private int type;
     private String description;
-    private long lat, lng;
+    private double lat, lng;
     private DatabaseReference mDatabase;
 
 
@@ -69,8 +62,6 @@ public class SendLocationActivity extends AppCompatActivity {
     private String imageUri;
 
     private static final String IMAGE_DIRECTORY = "/YourDirectName";
-    private Context mContext;
-    private int GALLERY = 1, CAMERA = 2;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -78,6 +69,10 @@ public class SendLocationActivity extends AppCompatActivity {
         setContentView(R.layout.send_location);
         String id = createID();
         Context context = this;
+
+        Intent intent = getIntent();
+        lat = Double.parseDouble(intent.getStringExtra("lat"));
+        lng = Double.parseDouble(intent.getStringExtra("lng"));
 
         accidentList = findViewById(R.id.accidents_list);
         String[] accidentListTxt = {"Traffic Jam", "Accident", "Blockage"};
@@ -95,10 +90,12 @@ public class SendLocationActivity extends AppCompatActivity {
 
             }
         });
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        mStorageRef = storage.getReference();
 
         description = findViewById(R.id.editText_description).toString();
-        lat = getIntent().getExtras().getLong("lat");
-        lng = getIntent().getExtras().getLong("lng");
+//        lat = getIntent().getExtras().getLong("lat");
+//        lng = getIntent().getExtras().getLong("lng");
 
         requestMultiplePermissions();
         imgBtn = (ImageButton) findViewById(R.id.imgBtn);
@@ -113,6 +110,7 @@ public class SendLocationActivity extends AppCompatActivity {
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 StorageReference imgRef = mStorageRef.child("images/" + imageUri);
                 Notification notification = new Notification();
                 notification.setLat(lat);
@@ -133,10 +131,12 @@ public class SendLocationActivity extends AppCompatActivity {
                 }).addOnSuccessListener(taskSnapshot -> {
                     Task<Uri> firebaseUri = taskSnapshot.getStorage().getDownloadUrl();
                     firebaseUri.addOnSuccessListener(uri -> {
-                        String imageUrl = uri.toString();
                         mDatabase = FirebaseDatabase.getInstance().getReference().child("notis");
                         notification.setImage(uri.toString());
-                        mDatabase.child(id).push().setValue(notification);
+                        mDatabase.push().setValue(notification);
+                        Toast.makeText(context, "Sent report!", Toast.LENGTH_SHORT).show();
+                        Intent i = new Intent(SendLocationActivity.this, MainActivity.class);
+                        startActivity(i);
                     });
                 });
             }
@@ -181,12 +181,6 @@ public class SendLocationActivity extends AppCompatActivity {
         Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, TAKE_PICTURE);
 
-//        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//        File photo = new File(Environment.getExternalStorageDirectory(), "Dev20Pic-" + id + " .jpg");
-//        intent.putExtra(MediaStore.EXTRA_OUTPUT,
-//                FileProvider.getUriForFile(context, context.getPackageName() + ".provider", photo));
-//        imageUri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", photo);
-//        startActivityForResult(intent, TAKE_PICTURE);
     }
 
     @Override
@@ -199,25 +193,6 @@ public class SendLocationActivity extends AppCompatActivity {
                 imageView.setImageBitmap(thumbnail);
                 imageUri = saveImage(thumbnail);
                 Toast.makeText(getApplicationContext(), "Image Saved!", Toast.LENGTH_SHORT).show();
-
-//                if (resultCode == Activity.RESULT_OK) {
-//                    Uri selectedImage = imageUri;
-//                    getContentResolver().notifyChange(selectedImage, null);
-//                    ImageView imageView = (ImageView) findViewById(R.id.imgReview);
-//                    ContentResolver cr = getContentResolver();
-//                    Bitmap bitmap;
-//                    try {
-//                        bitmap = android.provider.MediaStore.Images.Media
-//                                .getBitmap(cr, selectedImage);
-//                        imageView.setImageBitmap(bitmap);
-//                        Toast.makeText(this, selectedImage.toString(),
-//                                Toast.LENGTH_LONG).show();
-//                    } catch (Exception e) {
-//                        Toast.makeText(this, "Failed to load", Toast.LENGTH_SHORT)
-//                                .show();
-//                        Log.e("Camera", e.toString());
-//                    }
-//                }
         }
     }
 
@@ -247,36 +222,6 @@ public class SendLocationActivity extends AppCompatActivity {
         return "";
     }
 
-//    public Uri uploadFile(Uri file, StorageReference imgRef){
-//        UploadTask uploadTask = imgRef.putFile(file);
-//
-//        // Register observers to listen for when the download is done or if it fails
-//        uploadTask.addOnFailureListener(exception -> {
-//            // Handle unsuccessful uploads
-//        }).addOnSuccessListener(taskSnapshot -> {
-//            // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
-//            // ...
-//        });
-//
-////        get download url
-//        Task<Uri> urlTask = uploadTask.continueWithTask(task -> {
-//            if (!task.isSuccessful()) {
-//                throw task.getException();
-//            }
-//
-//            // Continue with the task to get the download URL
-//            return imgRef.getDownloadUrl();
-//        }).addOnCompleteListener(task -> {
-//            if (task.isSuccessful()) {
-//                Uri imageUri = (Uri) task.getResult();
-//            } else {
-//                // Handle failures
-//                // ...
-//            }
-//        });
-//        return imageUri;
-//    }
-
     public void downloadFile(StorageReference imgRef) throws IOException {
 
         File localFile = File.createTempFile("images", "jpg");
@@ -296,8 +241,6 @@ public class SendLocationActivity extends AppCompatActivity {
         });
     }
     public String createID(){
-        Date now = new Date();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss");
-        return dateFormat.format(now);
+        return UUID.randomUUID().toString();
     }
 }

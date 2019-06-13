@@ -3,8 +3,8 @@ package com.example.dev20_2.model;
 public class Notification {
     private String id;
     private String email;
-    private long lat;
-    private long lng;
+    private double lat;
+    private double lng;
     private int type;
     private int upvote;
     private int downvote;
@@ -22,19 +22,19 @@ public class Notification {
         this.email = email;
     }
 
-    public long getLat() {
+    public double getLat() {
         return lat;
     }
 
-    public void setLat(long lat) {
+    public void setLat(double lat) {
         this.lat = lat;
     }
 
-    public long getLng() {
+    public double getLng() {
         return lng;
     }
 
-    public void setLng(long lng) {
+    public void setLng(double lng) {
         this.lng = lng;
     }
 

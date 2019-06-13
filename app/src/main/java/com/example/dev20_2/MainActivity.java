@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.NotificationCompat;
@@ -27,6 +28,7 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -105,7 +107,6 @@ public class MainActivity extends AppCompatActivity
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-
         Places.initialize(getApplicationContext(), "AIzaSyBqoJ10T2R-e2t5K6DHFvLNNoL1sm4XJsY");
         final AutocompleteSupportFragment autocompleteSupportFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
         autocompleteSupportFragment.setPlaceFields(Arrays.asList(Place.Field.LAT_LNG, Place.Field.ID, Place.Field.NAME));
@@ -135,17 +136,14 @@ public class MainActivity extends AppCompatActivity
         });
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
-        // khi Firebase database thay đổi thì sao
-        mDatabase.child("notis").addValueEventListener(new ValueEventListener() {
+
+        mDatabase.child("notis").addChildEventListener(new ChildEventListener() {
+
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d("DbChange", "Data changed!");
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if(dataSnapshot != null){
-                    Log.d("DbChange", "Datasnapshot not null!");
+
                     Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-//                    HashMap<String, Notification> notis = (HashMap<String, Notification>) dataSnapshot.getValue();
-                    // với mỗi thay đổi trong database thì khởi tạo 1 instance class Notification tương ứng
-                    // và gửi lên push notification cho người dùng
                     for ( DataSnapshot child: children){
                         Notification noti = child.getValue(Notification.class);
 
@@ -158,6 +156,21 @@ public class MainActivity extends AppCompatActivity
             }
 
             @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
@@ -166,9 +179,7 @@ public class MainActivity extends AppCompatActivity
         mDatabase.child("notis").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d("DbChange", "Data changed!");
                 if(dataSnapshot != null){
-                    Log.d("DbChange", "Datasnapshot not null!");
                     Iterable<DataSnapshot> children = dataSnapshot.getChildren();
 //                    HashMap<String, Notification> notis = (HashMap<String, Notification>) dataSnapshot.getValue();
                     // với mỗi thay đổi trong database thì khởi tạo 1 instance class Notification tương ứng
