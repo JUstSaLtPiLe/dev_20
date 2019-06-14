@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -43,7 +44,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -102,8 +105,6 @@ public class SendLocationActivity extends AppCompatActivity {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         mStorageRef = storage.getReference();
 
-        description = findViewById(R.id.editText_description).toString();
-
         requestMultiplePermissions();
         imgBtn = (ImageButton) findViewById(R.id.imgBtn);
         btnSubmit = (Button) findViewById(R.id.btn_submit);
@@ -119,6 +120,10 @@ public class SendLocationActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 StorageReference imgRef = mStorageRef.child("images/" + imageUri);
+
+                EditText desET = (EditText) findViewById(R.id.editText_description);
+                description = desET.getText().toString();
+
                 Notification notification = new Notification();
                 notification.setLat(lat);
                 notification.setLng(lng);
@@ -129,12 +134,9 @@ public class SendLocationActivity extends AppCompatActivity {
                 File imageFile = new File(imageUri);
                 Uri image = Uri.fromFile(imageFile);
                 UploadTask uploadTask = imgRef.putFile(image);
-                uploadTask.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception exception) {
-                        // Handle unsuccessful uploads
-                        Toast.makeText(getApplicationContext(),"Sending failed", Toast.LENGTH_SHORT).show();
-                    }
+                uploadTask.addOnFailureListener(exception -> {
+                    // Handle unsuccessful uploads
+                    Toast.makeText(getApplicationContext(),"Sending failed", Toast.LENGTH_SHORT).show();
                 }).addOnSuccessListener(taskSnapshot -> {
                     Task<Uri> firebaseUri = taskSnapshot.getStorage().getDownloadUrl();
                     firebaseUri.addOnSuccessListener(uri -> {
@@ -142,6 +144,7 @@ public class SendLocationActivity extends AppCompatActivity {
                         notification.setImage(uri.toString());
                         mDatabase.push().setValue(notification);
                         Toast.makeText(context, "Sent report!", Toast.LENGTH_SHORT).show();
+                        finish();
 //                        Intent i = new Intent(SendLocationActivity.this, MainActivity.class);
 //                        startActivity(i);
                     });

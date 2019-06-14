@@ -1,5 +1,8 @@
 package com.example.dev20_2.model;
 
+import java.util.Calendar;
+import java.util.Date;
+
 public class Notification {
     private String id;
     private String email;
@@ -10,8 +13,41 @@ public class Notification {
     private int downvote;
     private String description;
     private String image;
+    private Date createdAt;
+    private Date updatedAt;
+
+    public Notification(String id, String email, double lat, double lng, int type, int upvote, int downvote, String description, String image, Date createdAt, Date updatedAt) {
+        this.id = id;
+        this.email = email;
+        this.lat = lat;
+        this.lng = lng;
+        this.type = type;
+        this.upvote = upvote;
+        this.downvote = downvote;
+        this.description = description;
+        this.image = image;
+        this.createdAt = Calendar.getInstance().getTime();
+        this.updatedAt = Calendar.getInstance().getTime();
+    }
+
 
     public Notification() {
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public String getEmail() {
