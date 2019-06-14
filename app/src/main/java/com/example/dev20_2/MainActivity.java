@@ -135,21 +135,32 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mDatabase = FirebaseDatabase.getInstance().getReference("notis");
 
-        mDatabase.child("notis").addChildEventListener(new ChildEventListener() {
-
+        mDatabase.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 if(dataSnapshot != null){
 
-                    Log.d("Child Added: ", "dataSnapshot: " + dataSnapshot);
-                    //Notification noti = dataSnapshot.getValue(Notification.class);
+                    Log.d("Child Added: ", "dataSnapshot: " + dataSnapshot + "; onChildAdded:" + dataSnapshot.getKey());
+                    Notification noti = dataSnapshot.getValue(Notification.class);
+
+                    Log.d("Child Added: ", "Noti: " + noti);
 
                         // maybe not push noti
                         //sendNotification(noti);
 
                         // add marker here
+                    Point nPoint = Point.fromLngLat(noti.getLng(), noti.getLat());
+                    GeoJsonSource nSource = mapboxMap.getStyle().getSourceAs("notification-source-id");
+                    if (nSource != null) {
+                        nSource.setGeoJson(Feature.fromGeometry(nPoint));
+                    }
+                    mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                            new CameraPosition.Builder()
+                                    .target(new LatLng(noti.getLng(), noti.getLat()))
+                                    .zoom(14)
+                                    .build()), 6000);
                 }
             }
 
@@ -314,6 +325,7 @@ public class MainActivity extends AppCompatActivity
             public void onStyleLoaded(@NonNull Style style) {
                 enableLocationComponent(style);
                 addDestinationIconSymbolLayer(style);
+                addNotificationIconSymbolLayer(style);
                 mapboxMap.addOnMapClickListener(MainActivity.this);
                 findViewById(R.id.fabDirection).setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -342,6 +354,20 @@ public class MainActivity extends AppCompatActivity
                 iconIgnorePlacement(true)
         );
         loadedMapStyle.addLayer(destinationSymbolLayer);
+    }
+
+    private void addNotificationIconSymbolLayer(@NonNull Style loadedMapStyle) {
+        loadedMapStyle.addImage("notification-icon-id",
+                BitmapFactory.decodeResource(this.getResources(), R.drawable.notification));
+        GeoJsonSource geoJsonSource = new GeoJsonSource("notification-source-id");
+        loadedMapStyle.addSource(geoJsonSource);
+        SymbolLayer notificationSymbolLayer = new SymbolLayer("notification-symbol-layer-id", "notification-source-id");
+        notificationSymbolLayer.withProperties(
+                iconImage("notification-icon-id"),
+                iconAllowOverlap(true),
+                iconIgnorePlacement(true)
+        );
+        loadedMapStyle.addLayer(notificationSymbolLayer);
     }
 
     public void sendNotification(Notification noti){

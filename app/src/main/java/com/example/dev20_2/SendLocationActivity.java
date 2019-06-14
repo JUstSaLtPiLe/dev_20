@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
@@ -102,7 +103,8 @@ public class SendLocationActivity extends AppCompatActivity {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         mStorageRef = storage.getReference();
 
-        description = findViewById(R.id.editText_description).toString();
+        EditText desET = (EditText) findViewById(R.id.editText_description);
+        description = desET.getText().toString();
 
         requestMultiplePermissions();
         imgBtn = (ImageButton) findViewById(R.id.imgBtn);
@@ -142,6 +144,7 @@ public class SendLocationActivity extends AppCompatActivity {
                         notification.setImage(uri.toString());
                         mDatabase.push().setValue(notification);
                         Toast.makeText(context, "Sent report!", Toast.LENGTH_SHORT).show();
+                        finish();
 //                        Intent i = new Intent(SendLocationActivity.this, MainActivity.class);
 //                        startActivity(i);
                     });
