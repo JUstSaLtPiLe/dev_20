@@ -44,7 +44,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -121,6 +123,10 @@ public class SendLocationActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 StorageReference imgRef = mStorageRef.child("images/" + imageUri);
+
+                Date date = new Date();
+                Timestamp now = new Timestamp(date.getTime());
+
                 Notification notification = new Notification();
                 notification.setLat(lat);
                 notification.setLng(lng);
@@ -128,15 +134,14 @@ public class SendLocationActivity extends AppCompatActivity {
                 notification.setType(type);
                 notification.setId(id);
                 notification.setEmail("1");
+                notification.setCreatedAt(now);
+                notification.setUpdatedAt(now);
                 File imageFile = new File(imageUri);
                 Uri image = Uri.fromFile(imageFile);
                 UploadTask uploadTask = imgRef.putFile(image);
-                uploadTask.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception exception) {
-                        // Handle unsuccessful uploads
-                        Toast.makeText(getApplicationContext(),"Sending failed", Toast.LENGTH_SHORT).show();
-                    }
+                uploadTask.addOnFailureListener(exception -> {
+                    // Handle unsuccessful uploads
+                    Toast.makeText(getApplicationContext(),"Sending failed", Toast.LENGTH_SHORT).show();
                 }).addOnSuccessListener(taskSnapshot -> {
                     Task<Uri> firebaseUri = taskSnapshot.getStorage().getDownloadUrl();
                     firebaseUri.addOnSuccessListener(uri -> {

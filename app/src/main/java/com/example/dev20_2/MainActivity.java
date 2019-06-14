@@ -39,6 +39,7 @@ import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.api.directions.v5.models.DirectionsResponse;
 import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
@@ -57,6 +58,7 @@ import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
 import com.mapbox.services.android.navigation.v5.navigation.NavigationRoute;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -83,6 +85,8 @@ public class MainActivity extends AppCompatActivity
     private FloatingActionButton sendLocation;
     private DatabaseReference mDatabase;
     String NOTIFICATION_CHANNEL_ID = "101";
+
+    List<Feature> featureCollection = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,75 +141,6 @@ public class MainActivity extends AppCompatActivity
 
         mDatabase = FirebaseDatabase.getInstance().getReference("notis");
 
-        mDatabase.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                if(dataSnapshot != null){
-
-                    Log.d("Child Added: ", "dataSnapshot: " + dataSnapshot + "; onChildAdded:" + dataSnapshot.getKey());
-                    Notification noti = dataSnapshot.getValue(Notification.class);
-
-                    Log.d("Child Added: ", "Noti: " + noti);
-
-                        // maybe not push noti
-                        //sendNotification(noti);
-
-                        // add marker here
-                    Point nPoint = Point.fromLngLat(noti.getLng(), noti.getLat());
-                    GeoJsonSource nSource = mapboxMap.getStyle().getSourceAs("notification-source-id");
-                    if (nSource != null) {
-                        nSource.setGeoJson(Feature.fromGeometry(nPoint));
-                    }
-                    mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
-                            new CameraPosition.Builder()
-                                    .target(new LatLng(noti.getLng(), noti.getLat()))
-                                    .zoom(14)
-                                    .build()), 6000);
-                }
-            }
-
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-        mDatabase.child("notis").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(dataSnapshot != null){
-                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
-//                    HashMap<String, Notification> notis = (HashMap<String, Notification>) dataSnapshot.getValue();
-                    // với mỗi thay đổi trong database thì khởi tạo 1 instance class Notification tương ứng
-                    // và gửi lên push notification cho người dùng
-                    for ( DataSnapshot child: children){
-                        Notification noti = child.getValue(Notification.class);
-
-                        // add marker here
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
     public void sendLocation(){
@@ -222,8 +157,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-
-
 
     private void getRoute(Point origin, Point destination) {
         NavigationRoute.builder(getApplicationContext())
@@ -324,8 +257,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onStyleLoaded(@NonNull Style style) {
                 enableLocationComponent(style);
-                addDestinationIconSymbolLayer(style);
                 addNotificationIconSymbolLayer(style);
+                addDestinationIconSymbolLayer(style);
                 mapboxMap.addOnMapClickListener(MainActivity.this);
                 findViewById(R.id.fabDirection).setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -338,6 +271,54 @@ public class MainActivity extends AppCompatActivity
                         NavigationLauncher.startNavigation(MainActivity.this, options);
                     }
                 });
+            }
+        });
+        mDatabase.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                if(dataSnapshot != null){
+
+                    Log.d("Child Added: ", "dataSnapshot: " + dataSnapshot + "; onChildAdded:" + dataSnapshot.getKey());
+                    Notification noti = dataSnapshot.getValue(Notification.class);
+
+                    Log.d("Child Added: ", "Noti: " + noti);
+
+                    // maybe not push noti
+                    //sendNotification(noti);
+
+                    // add marker here
+                    Point nPoint = Point.fromLngLat(noti.getLng(), noti.getLat());
+                    GeoJsonSource nSource = mapboxMap.getStyle().getSourceAs("notification-source-id");
+                    if (nSource != null) {
+                        featureCollection.add(Feature.fromGeometry(nPoint));
+                        nSource.setGeoJson(FeatureCollection.fromFeatures(featureCollection));
+                    }
+                    mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                            new CameraPosition.Builder()
+                                    .target(new LatLng(noti.getLng(), noti.getLat()))
+                                    .zoom(14)
+                                    .build()), 6000);
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
     }
@@ -359,14 +340,14 @@ public class MainActivity extends AppCompatActivity
     private void addNotificationIconSymbolLayer(@NonNull Style loadedMapStyle) {
         loadedMapStyle.addImage("notification-icon-id",
                 BitmapFactory.decodeResource(this.getResources(), R.drawable.notification));
-        GeoJsonSource geoJsonSource = new GeoJsonSource("notification-source-id");
+        initNotificationMarker();
+        GeoJsonSource geoJsonSource = new GeoJsonSource("notification-source-id", FeatureCollection.fromFeatures(featureCollection));
         loadedMapStyle.addSource(geoJsonSource);
         SymbolLayer notificationSymbolLayer = new SymbolLayer("notification-symbol-layer-id", "notification-source-id");
         notificationSymbolLayer.withProperties(
                 iconImage("notification-icon-id"),
                 iconAllowOverlap(true),
-                iconIgnorePlacement(true)
-        );
+                iconIgnorePlacement(true));
         loadedMapStyle.addLayer(notificationSymbolLayer);
     }
 
@@ -394,6 +375,26 @@ public class MainActivity extends AppCompatActivity
         notificationManager.notify(0, builder.build());
     }
 
+    public void initNotificationMarker(){
+        mDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot != null){
+                    Iterable<DataSnapshot> children = dataSnapshot.getChildren();
+                    for ( DataSnapshot child: children){
+                        Notification noti = child.getValue(Notification.class);
+                        featureCollection.add(Feature.fromGeometry(
+                                Point.fromLngLat(noti.getLng(), noti.getLat())));
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
 
     @SuppressWarnings( {"MissingPermission"})
