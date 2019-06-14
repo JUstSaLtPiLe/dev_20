@@ -70,7 +70,6 @@ public class LoginActivity extends AppCompatActivity {
                 // tạo token cho người dùng
                 // token này chưa dùng để làm gì cả
                 String newToken = instanceIdResult.getToken();
-                Log.e("newToken",newToken);
 
             }
         });

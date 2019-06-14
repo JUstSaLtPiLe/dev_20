@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         sendLocation();
+        currentLocation();
 
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -145,6 +146,21 @@ public class MainActivity extends AppCompatActivity
 
         mDatabase = FirebaseDatabase.getInstance().getReference("notis");
 
+    }
+
+    public void currentLocation(){
+        findViewById(R.id.fabCurrentLocation).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Point currentLocation = Point.fromLngLat(locationComponent.getLastKnownLocation().getLongitude(),
+                        locationComponent.getLastKnownLocation().getLatitude());
+                mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                        new CameraPosition.Builder()
+                                .target(new LatLng(currentLocation.latitude(), currentLocation.longitude()))
+                                .zoom(14)
+                                .build()));
+            }
+        });
     }
 
     public void sendLocation(){
