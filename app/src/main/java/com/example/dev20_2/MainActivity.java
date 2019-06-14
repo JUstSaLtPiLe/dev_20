@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity
     private FloatingActionButton sendLocation;
     private DatabaseReference mDatabase;
     String NOTIFICATION_CHANNEL_ID = "101";
+    private  FloatingActionButton btnDirection;
 
     List<Feature> featureCollection = new ArrayList<>();
 
@@ -110,6 +111,8 @@ public class MainActivity extends AppCompatActivity
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+        btnDirection = findViewById(R.id.fabDirection);
+        btnDirection.setEnabled(false);
 
         Places.initialize(getApplicationContext(), "AIzaSyBqoJ10T2R-e2t5K6DHFvLNNoL1sm4XJsY");
         final AutocompleteSupportFragment autocompleteSupportFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
@@ -131,6 +134,7 @@ public class MainActivity extends AppCompatActivity
                         .zoom(14)
                         .build()), 6000);
                 getRoute(originPoint, destinationPoint);
+                btnDirection.setEnabled(true);
             }
 
             @Override
@@ -253,14 +257,15 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMapReady(@NonNull final MapboxMap mapboxMap) {
         this.mapboxMap = mapboxMap;
+        GeoJsonSource nGeoJsonSource = new GeoJsonSource("notification-source-id", FeatureCollection.fromFeatures(featureCollection));
         mapboxMap.setStyle(getString(R.string.navigation_guidance_day), new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
                 enableLocationComponent(style);
-                addNotificationIconSymbolLayer(style);
+                addNotificationIconSymbolLayer(style, nGeoJsonSource);
                 addDestinationIconSymbolLayer(style);
                 mapboxMap.addOnMapClickListener(MainActivity.this);
-                findViewById(R.id.fabDirection).setOnClickListener(new View.OnClickListener() {
+                btnDirection.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         boolean simulateRoute = true;
@@ -271,56 +276,57 @@ public class MainActivity extends AppCompatActivity
                         NavigationLauncher.startNavigation(MainActivity.this, options);
                     }
                 });
-            }
-        });
-        mDatabase.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                if(dataSnapshot != null){
+                mDatabase.addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                        if(dataSnapshot != null){
+                            Notification noti = dataSnapshot.getValue(Notification.class);
 
-                    Log.d("Child Added: ", "dataSnapshot: " + dataSnapshot + "; onChildAdded:" + dataSnapshot.getKey());
-                    Notification noti = dataSnapshot.getValue(Notification.class);
+                            Log.d("Child Added: ", "Noti: img - " + noti.getImage()
+                                    + "; lng - " + noti.getLng() + "; lat - " + noti.getLat());
 
-                    Log.d("Child Added: ", "Noti: " + noti);
+                            // maybe not push noti
 
-                    // maybe not push noti
-                    //sendNotification(noti);
+                            //sendNotification(noti);
 
-                    // add marker here
-                    Point nPoint = Point.fromLngLat(noti.getLng(), noti.getLat());
-                    GeoJsonSource nSource = mapboxMap.getStyle().getSourceAs("notification-source-id");
-                    if (nSource != null) {
-                        featureCollection.add(Feature.fromGeometry(nPoint));
-                        nSource.setGeoJson(FeatureCollection.fromFeatures(featureCollection));
+                            // add marker here
+                            Point nPoint = Point.fromLngLat(noti.getLng(), noti.getLat());
+                            GeoJsonSource nSource = mapboxMap.getStyle().getSourceAs("notification-source-id");
+                            if (nSource != null) {
+                                featureCollection.add(Feature.fromGeometry(nPoint));
+                                nSource.setGeoJson(FeatureCollection.fromFeatures(featureCollection));
+                            }
+                            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                                    new CameraPosition.Builder()
+                                            .target(new LatLng(noti.getLat(), noti.getLng()))
+                                            .zoom(14)
+                                            .build()), 6000);
+                        }
                     }
-                    mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
-                            new CameraPosition.Builder()
-                                    .target(new LatLng(noti.getLng(), noti.getLat()))
-                                    .zoom(14)
-                                    .build()), 6000);
-                }
-            }
 
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                    @Override
+                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
-            }
+                    }
 
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                    @Override
+                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
 
-            }
+                    }
 
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                    @Override
+                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
 
-            }
+                    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
+                    }
+                });
             }
         });
+
     }
 
     private void addDestinationIconSymbolLayer(@NonNull Style loadedMapStyle) {
@@ -337,12 +343,11 @@ public class MainActivity extends AppCompatActivity
         loadedMapStyle.addLayer(destinationSymbolLayer);
     }
 
-    private void addNotificationIconSymbolLayer(@NonNull Style loadedMapStyle) {
+    private void addNotificationIconSymbolLayer(@NonNull Style loadedMapStyle, GeoJsonSource nGeoJsonSource) {
         loadedMapStyle.addImage("notification-icon-id",
-                BitmapFactory.decodeResource(this.getResources(), R.drawable.notification));
+                BitmapFactory.decodeResource(this.getResources(), R.drawable.map_marker_light));
         initNotificationMarker();
-        GeoJsonSource geoJsonSource = new GeoJsonSource("notification-source-id", FeatureCollection.fromFeatures(featureCollection));
-        loadedMapStyle.addSource(geoJsonSource);
+        loadedMapStyle.addSource(nGeoJsonSource);
         SymbolLayer notificationSymbolLayer = new SymbolLayer("notification-symbol-layer-id", "notification-source-id");
         notificationSymbolLayer.withProperties(
                 iconImage("notification-icon-id"),

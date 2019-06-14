@@ -1,5 +1,6 @@
 package com.example.dev20_2.model;
 
+import java.util.Calendar;
 import java.util.Date;
 
 public class Notification {
@@ -25,8 +26,8 @@ public class Notification {
         this.downvote = downvote;
         this.description = description;
         this.image = image;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.createdAt = Calendar.getInstance().getTime();
+        this.updatedAt = Calendar.getInstance().getTime();
     }
 
 

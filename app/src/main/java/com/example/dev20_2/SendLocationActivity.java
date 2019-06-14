@@ -105,9 +105,6 @@ public class SendLocationActivity extends AppCompatActivity {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         mStorageRef = storage.getReference();
 
-        EditText desET = (EditText) findViewById(R.id.editText_description);
-        description = desET.getText().toString();
-
         requestMultiplePermissions();
         imgBtn = (ImageButton) findViewById(R.id.imgBtn);
         btnSubmit = (Button) findViewById(R.id.btn_submit);
@@ -124,8 +121,8 @@ public class SendLocationActivity extends AppCompatActivity {
 
                 StorageReference imgRef = mStorageRef.child("images/" + imageUri);
 
-                Date date = new Date();
-                Timestamp now = new Timestamp(date.getTime());
+                EditText desET = (EditText) findViewById(R.id.editText_description);
+                description = desET.getText().toString();
 
                 Notification notification = new Notification();
                 notification.setLat(lat);
@@ -134,8 +131,6 @@ public class SendLocationActivity extends AppCompatActivity {
                 notification.setType(type);
                 notification.setId(id);
                 notification.setEmail("1");
-                notification.setCreatedAt(now);
-                notification.setUpdatedAt(now);
                 File imageFile = new File(imageUri);
                 Uri image = Uri.fromFile(imageFile);
                 UploadTask uploadTask = imgRef.putFile(image);
